@@ -1,7 +1,7 @@
 {
   "id": "org-reader",
   "name": "Org Reader",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.4.0",
   "description": "Read Org files in a clean rendered view: headings, TODO keywords, tags, lists, tables, code blocks and links, with a switch to edit the source.",
   "author": "ESeNonFossiIo",
