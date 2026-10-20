@@ -3,4 +3,5 @@
 //   showProperties   show :PROPERTIES: drawers under headings
 //   showComments     show "# " comment lines and #+BEGIN_COMMENT blocks
 //   honorStartup     apply `#+STARTUP: overview` / `content` when a file opens
-export const DEFAULTS = { defaultMode: "read", showProperties: false, showComments: false, honorStartup: true };
+//   renderMath       typeset LaTeX ($..$, \(..\), \[..\], \begin{..}) with Obsidian's MathJax
+export const DEFAULTS = { defaultMode: "read", showProperties: false, showComments: false, honorStartup: true, renderMath: true };

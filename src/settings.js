@@ -24,6 +24,9 @@ export class OrgReaderSettings extends PluginSettingTab {
     new Setting(containerEl).setName("Show comments")
       .setDesc("Show lines starting with '# ' and #+BEGIN_COMMENT blocks.")
       .addToggle((t) => t.setValue(this.plugin.settings.showComments).onChange((v) => save("showComments", v)));
+    new Setting(containerEl).setName("LaTeX math")
+      .setDesc("Typeset $...$, \\(...\\), \\[...\\] and \\begin{...} blocks with Obsidian's math renderer. When off, they are shown as written.")
+      .addToggle((t) => t.setValue(this.plugin.settings.renderMath).onChange((v) => save("renderMath", v)));
     new Setting(containerEl).setName("Follow #+STARTUP")
       .setDesc("Open files folded when they say '#+STARTUP: overview' or 'content'.")
       .addToggle((t) => t.setValue(this.plugin.settings.honorStartup).onChange((v) => save("honorStartup", v)));

@@ -323,3 +323,20 @@
   background: var(--background-secondary);
   color: var(--text-error);
 }
+
+/* LaTeX */
+.org-reader .org-math {
+  margin: 0 0 var(--size-4-3);
+  overflow-x: auto;
+  text-align: center;
+}
+.org-reader .org-math-source {
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+}
+pre.org-math-source {
+  margin: 0;
+  background: none;
+  white-space: pre-wrap;
+  text-align: left;
+}

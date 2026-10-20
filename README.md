@@ -21,6 +21,10 @@ Code, quote, verse and note blocks, with footnotes collected at the end.
 
 ![Blocks and footnotes](screenshots/blocks.png)
 
+LaTeX math, inline and display, typeset with Obsidian's MathJax.
+
+![LaTeX math](screenshots/math.png)
+
 Task lists, in a small file.
 
 ![Checklist](screenshots/checklist.png)
@@ -45,11 +49,12 @@ The same file as plain text, one click away with the Edit button.
 | `\| a \| b \|` | Tables (rows above the `\|---+---\|` rule are the header) |
 | `#+BEGIN_SRC`, `_EXAMPLE`, `_QUOTE`, `_VERSE`, `_CENTER`, `_COMMENT`, others | Code and text blocks |
 | `[fn:1]` and `[fn:1] text` | Footnotes collected at the end |
+| `$x^2$`, `\(x\)`, `\[x\]`, `$$x$$`, `\begin{equation}...\end{equation}` | LaTeX math, typeset with Obsidian's built-in MathJax |
 | `#+TITLE`, `#+AUTHOR`, `#+DATE` | Page header |
 | `#+STARTUP: overview` / `content` | Opens folded |
 | `#+CAPTION:` | Figure captions for tables and blocks |
 
-Not rendered: LaTeX fragments, sub/superscripts, inline source blocks, the agenda, table
+Not rendered: sub/superscripts, Org entities such as `\alpha` (write `$\alpha$` instead), inline source blocks, the agenda, table
 formulas and Babel execution. Unknown syntax is shown as plain text, never dropped.
 
 ## Commands
@@ -63,6 +68,7 @@ Run from the command palette (`Ctrl+P`, prefix "Org Reader: ").
 
 - **Open files in**: reading or source.
 - **Show property drawers**, **Show comments**.
+- **LaTeX math**: typeset formulas, or show them as written.
 - **Follow #+STARTUP**: open folded when the file says `overview` or `content`.
 
 ## Install

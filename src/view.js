@@ -1,6 +1,6 @@
 // The view for .org files: a rendered "reading" mode and a plain-text "source" mode.
 // The file content lives in `this.data` (TextFileView); edits are saved through requestSave().
-import { TextFileView } from "obsidian";
+import { TextFileView, renderMath, finishRenderMath, loadMathJax } from "obsidian";
 import { parseOrg } from "./parser.js";
 import { renderDocument, setFold } from "./render.js";
 
@@ -100,6 +100,11 @@ export class OrgView extends TextFileView {
   render() {
     const top = this.readerEl.scrollTop;
     const s = this.plugin.settings;
+    // MathJax is loaded lazily by Obsidian; until it is there, formulas show as written
+    const math = s.renderMath && typeof globalThis.MathJax !== "undefined";
+    if (s.renderMath && !math && !this.mathLoading) {
+      this.mathLoading = loadMathJax().then(() => this.render()).catch((err) => console.error("Org Reader: MathJax failed to load:", err));
+    }
     try {
       renderDocument(parseOrg(this.data || ""), this.readerEl, {
         showProperties: s.showProperties,
@@ -107,7 +112,9 @@ export class OrgView extends TextFileView {
         honorStartup: s.honorStartup,
         onLink: (link) => this.followLink(link),
         imageSrc: (path) => this.imageUrl(path),
+        renderMath: math ? (source, display) => this.typeset(source, display) : null,
       });
+      if (math) finishRenderMath();
     } catch (err) {
       // show the problem instead of a blank pane, and keep the source reachable
       console.error("Org Reader:", err);
@@ -115,6 +122,24 @@ export class OrgView extends TextFileView {
       this.readerEl.createDiv({ cls: "org-error", text: `Org Reader could not render this file: ${err && err.message ? err.message : err}` });
     }
     this.readerEl.scrollTop = top;
+  }
+
+  /**
+   * Typeset one LaTeX fragment; if MathJax rejects it, show the source instead.
+   * @param {string} source
+   * @param {boolean} display true for a display (block) formula
+   * @returns {HTMLElement}
+   */
+  typeset(source, display) {
+    try {
+      return renderMath(source, display);
+    } catch (err) {
+      console.error("Org Reader: cannot typeset", source, err);
+      const el = document.createElement("code");
+      el.className = "org-math-source";
+      el.textContent = source;
+      return el;
+    }
   }
 
   /**

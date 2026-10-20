@@ -11,6 +11,8 @@ const EXTERNAL = /^(https?|ftp|mailto):/i;
  * @property {boolean} honorStartup apply `#+STARTUP: overview|content` when opening
  * @property {(link: {kind: "file"|"heading", path?: string, search?: string, slug?: string, title?: string}) => void} onLink
  * @property {(path: string) => ?string} imageSrc URL for a local image path, or null
+ * @property {?((source: string, display: boolean) => HTMLElement)} renderMath typesets a LaTeX
+ *   fragment; when null, fragments are shown as written
  */
 
 /**
@@ -162,6 +164,11 @@ function renderBlock(b, ctx) {
       return h("pre", "org-comment", b.text);
     }
     case "fixed": return h("pre", "org-fixed", b.text);
+    case "math": {
+      const d = h("div", "org-math");
+      d.append(ctx.opts.renderMath ? ctx.opts.renderMath(b.text, true) : h("pre", "org-math-source", b.text));
+      return d;
+    }
     case "example": return captioned(b, h("pre", "org-example", b.text), "figure");
     case "src": {
       const pre = h("pre", "org-src");
@@ -294,6 +301,7 @@ function renderInline(nodes, parent, ctx) {
       case "code": parent.append(h("code", "org-code", n.v)); break;
       case "verbatim": parent.append(h("code", "org-verbatim", n.v)); break;
       case "br": parent.append(h("br")); break;
+      case "math": parent.append(ctx.opts.renderMath ? ctx.opts.renderMath(n.v, n.display) : h("code", "org-math-source", n.raw)); break;
       case "cookie": parent.append(h("span", "org-cookie", `[${n.v}]`)); break;
       case "timestamp": parent.append(h("span", `org-timestamp${n.active ? " is-active" : ""}`, n.v.replace(/[<>[\]]/g, ""))); break;
       case "footref": {

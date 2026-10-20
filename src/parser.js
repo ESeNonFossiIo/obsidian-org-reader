@@ -17,7 +17,7 @@ const URL_RE = /(?:https?|ftp):\/\/[^\s<>[\]()]+|mailto:[^\s<>[\]()]+/y;
  * @param {string} src text of one paragraph, heading title or table cell
  * @returns {Array<object>} nodes: `{t: "text", v}`, `{t: "bold"|"italic"|"underline"|"strike", c}`,
  *   `{t: "code"|"verbatim", v}`, `{t: "link", target, desc}`, `{t: "timestamp", v, active}`,
- *   `{t: "footref", label}`, `{t: "cookie", v}`, `{t: "br"}`
+ *   `{t: "footref", label}`, `{t: "cookie", v}`, `{t: "math", v, display, raw}`, `{t: "br"}`
  */
 export function parseInline(src) {
   const out = [];
@@ -69,6 +69,15 @@ export function parseInline(src) {
         continue;
       }
     }
+    if (c === "$" || (c === "\\" && (src[i + 1] === "(" || src[i + 1] === "["))) {
+      const math = matchMath(src, i);
+      if (math) {
+        flush();
+        out.push(math.node);
+        i = math.end;
+        continue;
+      }
+    }
     if (c === "\\" && src[i + 1] === "\\" && (i + 2 === src.length || src[i + 2] === "\n")) {
       flush();
       out.push({ t: "br" });
@@ -91,6 +100,38 @@ export function parseInline(src) {
   }
   flush();
   return out;
+}
+
+/**
+ * Match a LaTeX fragment starting at `i`: `\(..\)`, `\[..\]`, `$$..$$` or `$..$`. The `$..$`
+ * form follows Org's rules (no space inside the borders, so "$5 and $6" is not math).
+ * @param {string} src
+ * @param {number} i
+ * @returns {?{node: object, end: number}} the math node and the index after it
+ */
+function matchMath(src, i) {
+  const make = (inner, end, display) => {
+    const v = inner.trim();
+    return v ? { node: { t: "math", v, display, raw: src.slice(i, end) }, end } : null;
+  };
+  if (src[i] === "\\") {
+    const close = src[i + 1] === "(" ? "\\)" : "\\]";
+    const e = src.indexOf(close, i + 2);
+    return e < 0 ? null : make(src.slice(i + 2, e), e + 2, src[i + 1] === "[");
+  }
+  if (src[i + 1] === "$") {
+    const e = src.indexOf("$$", i + 2);
+    return e < 0 ? null : make(src.slice(i + 2, e), e + 2, true);
+  }
+  if ((i > 0 && src[i - 1] === "$") || i + 1 >= src.length || /[\s.,;$]/.test(src[i + 1])) return null;
+  let breaks = 0;
+  for (let j = i + 2; j < src.length; j++) {
+    if (src[j] === "\n" && ++breaks > 2) return null;
+    if (src[j] === "$" && !/[\s.,$]/.test(src[j - 1]) && (j + 1 === src.length || /[\s.,?;:'")-]/.test(src[j + 1]))) {
+      return make(src.slice(i + 1, j), j + 1, false);
+    }
+  }
+  return null;
 }
 
 /**
@@ -119,7 +160,7 @@ export function inlineText(nodes) {
   return nodes.map((n) => {
     if (n.t === "text" || n.t === "code" || n.t === "verbatim") return n.v;
     if (n.t === "link") return n.desc ? inlineText(n.desc) : n.target;
-    if (n.t === "timestamp" || n.t === "cookie") return n.v;
+    if (n.t === "timestamp" || n.t === "cookie" || n.t === "math") return n.v;
     if (n.c) return inlineText(n.c);
     return n.t === "br" ? " " : "";
   }).join("");
@@ -293,7 +334,7 @@ function assignSlugs(sections, seen) {
  * @param {string[]} lines
  * @param {object} doc receives footnote definitions
  * @returns {object[]} blocks: paragraph, list, table, src, example, quote, center, verse,
- *   comment, drawer, special, fixed, hr
+ *   comment, drawer, special, fixed, math, hr
  */
 function parseBody(lines, doc) {
   const blocks = [];
@@ -350,6 +391,16 @@ function parseBody(lines, doc) {
       take({ type: "fixed", text: text.join("\n") });
       continue;
     }
+    if ((m = /^\s*\\begin\{([A-Za-z]+\*?)\}/.exec(line))) {
+      const end = new RegExp(`^\\s*\\\\end\\{${escapeRe(m[1])}\\}`);
+      let j = i + 1;
+      while (j < lines.length && !end.test(lines[j])) j++;
+      if (j < lines.length) {
+        take({ type: "math", text: dedent(lines.slice(i, j + 1), indentOf(line)).join("\n") });
+        i = j + 1;
+        continue;
+      }
+    }
     if ((m = /^\[fn:([\w-]+)\][ \t]*(.*)$/.exec(line))) {
       const body = [m[2]];
       i++;
@@ -392,7 +443,7 @@ function isItem(line) {
  * @returns {boolean} true if the line ends a running paragraph
  */
 function interrupts(line) {
-  return isItem(line) || /^\s*(\||#\+|:[\w-]+:\s*$|-{5,}\s*$)|^\[fn:[\w-]+\]/.test(line);
+  return isItem(line) || /^\s*(\||#\+|:[\w-]+:\s*$|-{5,}\s*$|\\begin\{)|^\[fn:[\w-]+\]/.test(line);
 }
 
 /**

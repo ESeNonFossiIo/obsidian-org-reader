@@ -172,3 +172,40 @@ test("robust: empty input, CRLF, only stars", () => {
   assert.equal(parseOrg("* A\r\n\r\ntext\r\n").children[0].blocks[0].type, "paragraph");
   assert.equal(parseOrg("*\n").children[0].titleText, "");
 });
+
+test("math: inline and display fragments", () => {
+  const m = (s) => parseInline(s).filter((n) => n.t === "math");
+  assert.deepEqual(m("a $x^2$ b").map((n) => [n.v, n.display]), [["x^2", false]]);
+  assert.deepEqual(m("a \\(x_1\\) b").map((n) => [n.v, n.display]), [["x_1", false]]);
+  assert.deepEqual(m("a \\[x+y\\] b").map((n) => [n.v, n.display]), [["x+y", true]]);
+  assert.deepEqual(m("a $$x=1$$ b").map((n) => [n.v, n.display]), [["x=1", true]]);
+  assert.equal(m("$a$")[0].raw, "$a$");
+  assert.equal(inlineText(parseInline("sum $a_i$ here")), "sum a_i here");
+});
+
+test("math: Org's $ rules keep prices and stray dollars as text", () => {
+  for (const s of ["costs $5 and $10 today", "a $ b $ c", "only $one dollar", "$ spaced$", "x$.", "$$unclosed"]) {
+    assert.deepEqual(parseInline(s).filter((n) => n.t === "math"), [], s);
+  }
+  assert.equal(parseInline("($x$)").filter((n) => n.t === "math").length, 1);
+});
+
+test("math: fragments span lines, and markup around them still works", () => {
+  const n = parseInline("*bold* and \\[a\n+ b\\] then =$not$= end");
+  assert.deepEqual(types(n).filter((t) => t !== "text"), ["bold", "math", "verbatim"]);
+  assert.equal(n[2].v, "a\n+ b");
+});
+
+test("math: environments are display blocks and interrupt paragraphs", () => {
+  const d = parseOrg("text\n\\begin{equation}\nE = mc^2\n\\end{equation}\nafter\n\n  \\begin{align*}\na &= b\n  \\end{align*}\n\\begin{unclosed}\n");
+  assert.deepEqual(d.blocks.map((b) => b.type), ["paragraph", "math", "paragraph", "math", "paragraph"]);
+  assert.equal(d.blocks[1].text, "\\begin{equation}\nE = mc^2\n\\end{equation}");
+  assert.match(d.blocks[3].text, /^\\begin\{align\*\}\na &= b\n/);
+  assert.equal(inlineText(d.blocks[4].inline), "\\begin{unclosed}");
+});
+
+test("math: headings and list items can contain fragments", () => {
+  const d = parseOrg("* Energy $E=mc^2$\n- item with $x$\n");
+  assert.equal(d.children[0].title.filter((n) => n.t === "math").length, 1);
+  assert.equal(d.children[0].blocks[0].items[0].children[0].inline.filter((n) => n.t === "math").length, 1);
+});
