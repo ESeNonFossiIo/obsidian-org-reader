@@ -61,20 +61,39 @@ export class OrgView extends TextFileView {
    * @param {boolean} clear true when a different file replaces the old one
    */
   setViewData(data, clear) {
-    this.data = data;
+    // Obsidian hands back what we just saved after a write; replacing the editor with it would
+    // undo what was typed since the save started, so ignore that echo.
+    const echo = !clear && data === this.lastSaved;
+    this.data = echo ? this.data : data;
     if (clear) this.readerMode = this.plugin.settings.defaultMode;
-    if (this.cm && this.cm.state.doc.toString() !== data) {
-      // a change, not a new state, so extensions added by other plugins stay installed
-      this.cm.dispatch({
-        changes: { from: 0, to: this.cm.state.doc.length, insert: data },
-        annotations: [External.of(true), Transaction.addToHistory.of(false)],
-      });
-    }
+    if (this.cm && !echo && this.cm.state.doc.toString() !== data) this.replaceDocument(data);
     this.applyMode();
   }
 
+  /**
+   * Load text into the editor as a change, not a new state, so extensions added by other
+   * plugins stay installed. Only the differing middle part is replaced, which keeps the
+   * cursor, the folds and most of the undo history where they are.
+   * @param {string} text the new document
+   * @returns {void}
+   */
+  replaceDocument(text) {
+    const old = this.cm.state.doc.toString();
+    let a = 0;
+    while (a < old.length && a < text.length && old[a] === text[a]) a++;
+    let b = 0;
+    while (b < old.length - a && b < text.length - a && old[old.length - 1 - b] === text[text.length - 1 - b]) b++;
+    this.cm.dispatch({
+      changes: { from: a, to: old.length - b, insert: text.slice(a, text.length - b) },
+      annotations: [External.of(true), Transaction.addToHistory.of(false)],
+    });
+  }
+
   /** @returns {string} the content to save */
-  getViewData() { return this.data; }
+  getViewData() {
+    this.lastSaved = this.data;
+    return this.data;
+  }
 
   /** Empty both panes. */
   clear() {

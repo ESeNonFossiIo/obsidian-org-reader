@@ -82,6 +82,7 @@ formulas and Babel execution. Unknown syntax is shown as plain text, never dropp
 
 Run from the command palette (`Ctrl+P`, prefix "Org Reader: ").
 
+- **New Org file**: creates an empty `.org` file (next to the active file, or where Obsidian puts new notes) and opens it for editing. Also in the ribbon and in the folder menu of the file explorer.
 - **Toggle reading and editing**
 - **Fold all headings** / **Show headings only** / **Unfold all headings**
 - The editing keys above, as commands: next/previous TODO state, promote/demote heading or subtree, move up/down, toggle checkbox, new heading or item, fold at cursor, cycle folding

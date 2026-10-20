@@ -1,7 +1,7 @@
 // Org Reader: opens .org files in a clean rendered view (parser.js -> render.js -> view.js)
 // with a CodeMirror editor for editing. Independent of other Org plugins, but only one
 // plugin can own the "org" file extension: disable Orgmode (cm6) to use this one.
-import { Plugin, Notice } from "obsidian";
+import { Plugin, Notice, TFolder, normalizePath } from "obsidian";
 import { DEFAULTS } from "./settings-defaults.js";
 import { OrgReaderSettings } from "./settings.js";
 import { OrgView, VIEW_TYPE } from "./view.js";
@@ -17,6 +17,13 @@ export default class OrgReaderPlugin extends Plugin {
       console.error("Org Reader: cannot register the .org extension:", err);
       new Notice(`Org Reader: cannot take over .org files (${err && err.message ? err.message : err}). If Orgmode (cm6) was just disabled, restart Obsidian.`, 15000);
     }
+    this.addRibbonIcon("file-plus", "New Org file", () => this.newOrgFile());
+    this.addCommand({ id: "new-file", name: "New Org file", callback: () => this.newOrgFile() });
+    // "New Org file" in the file explorer's folder menu
+    this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
+      if (!(file instanceof TFolder)) return;
+      menu.addItem((item) => item.setTitle("New Org file").setIcon("file-plus").onClick(() => this.newOrgFile(file)));
+    }));
     this.addSettingTab(new OrgReaderSettings(this.app, this));
     this.addCommand({ id: "toggle-mode", name: "Toggle reading and editing", checkCallback: (checking) => this.withView(checking, (v) => v.setReaderMode(v.readerMode === "read" ? "edit" : "read")) });
     const editing = [
@@ -39,6 +46,35 @@ export default class OrgReaderPlugin extends Plugin {
     this.addCommand({ id: "fold-all", name: "Fold all headings", checkCallback: (checking) => this.withView(checking, (v) => v.fold("overview")) });
     this.addCommand({ id: "show-headings", name: "Show headings only", checkCallback: (checking) => this.withView(checking, (v) => v.fold("content")) });
     this.addCommand({ id: "unfold-all", name: "Unfold all headings", checkCallback: (checking) => this.withView(checking, (v) => v.fold("all")) });
+  }
+
+  /**
+   * Create an empty `.org` file next to the active file (or in the given folder, or where
+   * Obsidian puts new notes) and open it for editing.
+   * @param {import("obsidian").TFolder} [folder] where to create it
+   * @returns {Promise<void>}
+   */
+  async newOrgFile(folder) {
+    const active = this.app.workspace.getActiveFile();
+    const parent = folder || this.app.fileManager.getNewFileParent(active ? active.path : "");
+    const dir = parent.path === "/" ? "" : parent.path;
+    let name = "Untitled";
+    let path = normalizePath(`${dir}/${name}.org`);
+    for (let n = 1; this.app.vault.getAbstractFileByPath(path); n++) {
+      name = `Untitled ${n}`;
+      path = normalizePath(`${dir}/${name}.org`);
+    }
+    try {
+      const file = await this.app.vault.create(path, `#+TITLE: ${name}\n\n`);
+      const leaf = this.app.workspace.getLeaf(false);
+      await leaf.openFile(file);
+      if (leaf.view instanceof OrgView) leaf.view.setReaderMode("edit");
+      // let the user name it right away, like a new note
+      if (typeof this.app.fileManager.promptForFileRename === "function") this.app.fileManager.promptForFileRename(file);
+    } catch (err) {
+      console.error("Org Reader: cannot create file:", err);
+      new Notice(`Org Reader: cannot create ${path}: ${err && err.message ? err.message : err}`);
+    }
   }
 
   /**
