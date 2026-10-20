@@ -1,0 +1,325 @@
+/* Org Reader: reading view for .org files. Everything is scoped to .org-reader and uses
+   Obsidian's theme variables, so it follows the active theme in light and dark. */
+
+.org-reader-source,
+.org-reader {
+  height: 100%;
+  box-sizing: border-box;
+}
+.org-reader.is-hidden,
+.org-reader-source.is-hidden {
+  display: none;
+}
+
+/* source mode */
+.org-reader-source {
+  width: 100%;
+  padding: var(--size-4-6);
+  border: 0;
+  border-radius: 0;
+  resize: none;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: var(--code-size);
+  line-height: 1.6;
+}
+.org-reader-source:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* reading mode: a centred column */
+.org-reader {
+  overflow-y: auto;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--size-4-6) var(--size-4-5);
+  color: var(--text-normal);
+  line-height: 1.65;
+}
+.org-reader .org-doc-title {
+  margin: 0 0 var(--size-4-1);
+  font-size: 2em;
+}
+.org-reader .org-doc-meta {
+  margin-bottom: var(--size-4-6);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+/* headings */
+.org-reader .org-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4em;
+  margin: var(--size-4-6) 0 var(--size-4-2);
+  line-height: 1.3;
+}
+.org-reader .org-level-1 > .org-heading {
+  padding-bottom: var(--size-4-1);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+.org-reader .org-level-1 > .org-heading { font-size: 1.7em; }
+.org-reader .org-level-2 > .org-heading { font-size: 1.4em; }
+.org-reader .org-level-3 > .org-heading { font-size: 1.2em; }
+.org-reader .org-level-4 > .org-heading,
+.org-reader .org-level-5 > .org-heading,
+.org-reader .org-level-6 > .org-heading,
+.org-reader .org-level-7 > .org-heading,
+.org-reader .org-level-8 > .org-heading { font-size: 1.05em; }
+.org-reader .is-comment > .org-heading .org-title {
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+
+/* fold button: a chevron that turns when folded */
+.org-reader .org-fold {
+  align-self: center;
+  flex: none;
+  width: 1.2em;
+  height: 1.2em;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--text-faint);
+}
+.org-reader .org-fold::before {
+  content: "";
+  display: block;
+  width: 0.45em;
+  height: 0.45em;
+  margin: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.1s ease;
+}
+.org-reader .is-folded > .org-heading .org-fold::before,
+.org-reader .is-body-folded > .org-heading .org-fold::before {
+  transform: rotate(-45deg);
+}
+.org-reader .is-folded > .org-body,
+.org-reader .is-folded > .org-children,
+.org-reader .is-folded > .org-planning,
+.org-reader .is-body-folded > .org-body,
+.org-reader .is-body-folded > .org-planning {
+  display: none;
+}
+.org-reader .org-body,
+.org-reader .org-planning {
+  padding-left: 1.6em;
+}
+.org-reader .org-children {
+  padding-left: 0;
+}
+
+/* TODO keywords, priorities, tags */
+.org-reader .org-todo {
+  padding: 0 0.45em;
+  border-radius: var(--radius-s);
+  font-size: 0.7em;
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.03em;
+  background: var(--background-modifier-hover);
+  color: var(--color-red);
+}
+.org-reader .org-todo.is-done {
+  color: var(--color-green);
+}
+.org-reader .org-todo.org-kw-next,
+.org-reader .org-todo.org-kw-started,
+.org-reader .org-todo.org-kw-wait,
+.org-reader .org-todo.org-kw-waiting {
+  color: var(--color-orange);
+}
+.org-reader .org-priority {
+  font-size: 0.7em;
+  font-family: var(--font-monospace);
+  color: var(--text-accent);
+}
+.org-reader .org-priority::before { content: "#"; }
+.org-reader .org-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  margin-left: auto;
+}
+.org-reader .org-tag {
+  padding: 0 0.6em;
+  border-radius: 999px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-size: 0.65em;
+  font-weight: var(--font-normal);
+  line-height: 1.7;
+}
+
+/* planning and timestamps */
+.org-reader .org-planning {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2em 1em;
+  margin-bottom: var(--size-4-1);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+.org-reader .org-planning-kind {
+  margin-right: 0.4em;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  letter-spacing: 0.04em;
+}
+.org-reader .org-timestamp {
+  padding: 0 0.4em;
+  border-radius: var(--radius-s);
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: 0.85em;
+}
+.org-reader .org-timestamp.is-active {
+  color: var(--text-accent);
+}
+.org-reader .org-cookie {
+  font-family: var(--font-monospace);
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* inline markup */
+.org-reader .org-underline { text-decoration: underline; }
+.org-reader .org-code,
+.org-reader .org-verbatim {
+  padding: 0.05em 0.35em;
+  border-radius: var(--radius-s);
+  background: var(--code-background);
+  color: var(--code-normal);
+  font-family: var(--font-monospace);
+  font-size: 0.9em;
+}
+.org-reader .org-verbatim { color: var(--text-normal); }
+.org-reader .org-link { color: var(--link-color); text-decoration: var(--link-decoration); }
+.org-reader .org-link:hover { color: var(--link-color-hover); }
+.org-reader .org-image { max-width: 100%; border-radius: var(--radius-s); }
+.org-reader .org-footref-link { text-decoration: none; color: var(--text-accent); }
+
+/* paragraphs and rules */
+.org-reader .org-paragraph { margin: 0 0 var(--size-4-3); }
+.org-reader .org-hr {
+  margin: var(--size-4-5) 0;
+  border: 0;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* lists */
+.org-reader .org-list {
+  margin: 0 0 var(--size-4-3);
+  padding-left: 1.4em;
+}
+.org-reader .org-list .org-list { margin-bottom: 0; }
+.org-reader .org-item-body > .org-paragraph:last-child { margin-bottom: 0; }
+.org-reader .org-task {
+  list-style: none;
+  margin-left: -1.4em;
+  display: flex;
+  gap: 0.5em;
+  align-items: baseline;
+}
+.org-reader .org-task.is-on > .org-item-body { color: var(--text-muted); text-decoration: line-through; }
+.org-reader .org-dt { font-weight: var(--font-semibold); }
+.org-reader .org-dd { margin: 0 0 var(--size-4-2) 1.4em; }
+
+/* tables */
+.org-reader .org-table-wrap { overflow-x: auto; margin-bottom: var(--size-4-3); }
+.org-reader .org-table { border-collapse: collapse; }
+.org-reader .org-table th,
+.org-reader .org-table td {
+  padding: var(--size-4-1) var(--size-4-3);
+  border: 1px solid var(--background-modifier-border);
+}
+.org-reader .org-table th {
+  background: var(--background-secondary);
+  font-weight: var(--font-semibold);
+  text-align: left;
+}
+.org-reader .org-properties {
+  margin-bottom: var(--size-4-3);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+.org-reader .org-properties th { padding-right: var(--size-4-3); text-align: left; font-weight: var(--font-semibold); }
+
+/* code and verbatim blocks */
+.org-reader .org-src,
+.org-reader .org-example,
+.org-reader .org-fixed,
+.org-reader .org-comment {
+  position: relative;
+  margin: 0 0 var(--size-4-3);
+  padding: var(--size-4-3) var(--size-4-4);
+  overflow-x: auto;
+  border-radius: var(--radius-m);
+  background: var(--code-background);
+  font-family: var(--font-monospace);
+  font-size: var(--code-size);
+  line-height: 1.5;
+}
+.org-reader .org-src code,
+.org-reader .org-example,
+.org-reader .org-fixed { color: var(--code-normal); background: none; }
+.org-reader .org-src-lang {
+  position: absolute;
+  top: 0.2em;
+  right: 0.6em;
+  color: var(--text-faint);
+  font-size: 0.8em;
+}
+.org-reader .org-comment { color: var(--text-faint); font-style: italic; }
+
+/* quote, center, verse, special blocks, figures, drawers */
+.org-reader .org-quote {
+  margin: 0 0 var(--size-4-3);
+  padding-left: var(--size-4-4);
+  border-left: 3px solid var(--background-modifier-border);
+  color: var(--text-muted);
+}
+.org-reader .org-center { text-align: center; margin-bottom: var(--size-4-3); }
+.org-reader .org-verse { margin: 0 0 var(--size-4-3) var(--size-4-4); font-style: italic; white-space: pre-wrap; }
+.org-reader .org-special {
+  margin: 0 0 var(--size-4-3);
+  padding: var(--size-4-2) var(--size-4-4);
+  border-left: 3px solid var(--interactive-accent);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+}
+.org-reader .org-special-name {
+  color: var(--text-accent);
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+}
+.org-reader .org-figure { margin: 0 0 var(--size-4-3); }
+.org-reader .org-caption { margin-top: var(--size-4-1); color: var(--text-muted); font-size: var(--font-ui-small); }
+.org-reader .org-drawer { margin-bottom: var(--size-4-3); color: var(--text-muted); font-size: var(--font-ui-small); }
+.org-reader .org-drawer > summary { cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* footnotes */
+.org-reader .org-footnotes {
+  margin-top: var(--size-4-8);
+  padding-top: var(--size-4-3);
+  border-top: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+}
+.org-reader .org-footnotes-title { margin: 0 0 var(--size-4-2); font-size: 1em; color: var(--text-muted); }
+.org-reader .org-footnote { display: flex; gap: 0.5em; }
+.org-reader .org-footnote-body > .org-paragraph { margin-bottom: var(--size-4-1); }
+
+/* shown instead of the document when rendering fails */
+.org-reader .org-error {
+  padding: var(--size-4-3) var(--size-4-4);
+  border-left: 3px solid var(--color-red);
+  background: var(--background-secondary);
+  color: var(--text-error);
+}

@@ -1,0 +1,5 @@
+node_modules/
+/main.js
+.deploy-target
+dist/
+data.json
