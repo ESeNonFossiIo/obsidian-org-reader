@@ -11,6 +11,24 @@ view header switches to the plain-text source for editing.
 > (Settings → Community plugins) and reload Obsidian. Org Reader shows a notice on
 > startup when the extension is already taken.
 
+## Screenshots
+
+Reading view: headings, inline formatting, links, TODO keywords, tags and dates.
+
+![Reading view](screenshots/reading.png)
+
+Code, quote, verse and note blocks, with footnotes collected at the end.
+
+![Blocks and footnotes](screenshots/blocks.png)
+
+Task lists, in a small file.
+
+![Checklist](screenshots/checklist.png)
+
+The same file as plain text, one click away with the Edit button.
+
+![Source view](screenshots/source.png)
+
 ## What it renders
 
 | Org | Shown as |
@@ -33,7 +51,6 @@ view header switches to the plain-text source for editing.
 
 Not rendered: LaTeX fragments, sub/superscripts, inline source blocks, the agenda, table
 formulas and Babel execution. Unknown syntax is shown as plain text, never dropped.
-See [`examples/showcase.org`](examples/showcase.org) for a tour.
 
 ## Commands
 
