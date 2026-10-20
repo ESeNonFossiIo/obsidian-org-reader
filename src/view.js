@@ -1,12 +1,17 @@
-// The view for .org files: a rendered "reading" mode and a plain-text "source" mode.
+// The view for .org files: a rendered "read" mode and an "edit" mode with a CodeMirror editor.
 // The file content lives in `this.data` (TextFileView); edits are saved through requestSave().
+// The editor is created once and kept for the life of the view (hidden in read mode), so other
+// plugins can extend it through `view.codeMirror` and their extensions survive a file reload.
 import { TextFileView, renderMath, finishRenderMath, loadMathJax } from "obsidian";
+import { EditorView } from "@codemirror/view";
+import { Transaction } from "@codemirror/state";
 import { parseOrg } from "./parser.js";
 import { renderDocument, setFold } from "./render.js";
+import { orgExtensions, setFoldLevel, External } from "./editor.js";
 
 export const VIEW_TYPE = "org-reader";
 
-/** Reading/source view of one Org file. */
+/** Reading and editing view of one Org file. */
 export class OrgView extends TextFileView {
   /**
    * @param {import("obsidian").WorkspaceLeaf} leaf
@@ -18,6 +23,9 @@ export class OrgView extends TextFileView {
     this.readerMode = plugin.settings.defaultMode;
   }
 
+  /** @returns {?EditorView} the CodeMirror editor (other plugins use this), once the view is open */
+  get codeMirror() { return this.cm || null; }
+
   /** @returns {string} */
   getViewType() { return VIEW_TYPE; }
   /** @returns {string} */
@@ -28,10 +36,23 @@ export class OrgView extends TextFileView {
   /** Build the two panes and the mode switch in the view header. */
   async onOpen() {
     this.readerEl = this.contentEl.createDiv({ cls: "org-reader markdown-rendered" });
-    this.sourceEl = this.contentEl.createEl("textarea", { cls: "org-reader-source", attr: { spellcheck: "false" } });
-    this.sourceEl.addEventListener("input", () => { this.data = this.sourceEl.value; this.requestSave(); });
-    this.modeAction = this.addAction("pencil", "Edit source", () => this.setReaderMode(this.readerMode === "read" ? "source" : "read"));
+    this.cmHost = this.contentEl.createDiv({ cls: "org-reader-editor" });
+    this.cm = new EditorView({
+      parent: this.cmHost,
+      doc: this.data || "",
+      extensions: orgExtensions([EditorView.updateListener.of((u) => {
+        if (!u.docChanged || u.transactions.some((tr) => tr.annotation(External))) return;
+        this.data = u.state.doc.toString();
+        this.requestSave();
+      })]),
+    });
+    this.modeAction = this.addAction("pencil", "Edit", () => this.setReaderMode(this.readerMode === "read" ? "edit" : "read"));
     this.applyMode();
+  }
+
+  /** Remove the editor when the view closes. */
+  async onClose() {
+    if (this.cm) { this.cm.destroy(); this.cm = null; }
   }
 
   /**
@@ -42,7 +63,13 @@ export class OrgView extends TextFileView {
   setViewData(data, clear) {
     this.data = data;
     if (clear) this.readerMode = this.plugin.settings.defaultMode;
-    if (this.sourceEl && this.sourceEl.value !== data) this.sourceEl.value = data;
+    if (this.cm && this.cm.state.doc.toString() !== data) {
+      // a change, not a new state, so extensions added by other plugins stay installed
+      this.cm.dispatch({
+        changes: { from: 0, to: this.cm.state.doc.length, insert: data },
+        annotations: [External.of(true), Transaction.addToHistory.of(false)],
+      });
+    }
     this.applyMode();
   }
 
@@ -52,7 +79,7 @@ export class OrgView extends TextFileView {
   /** Empty both panes. */
   clear() {
     this.data = "";
-    if (this.sourceEl) this.sourceEl.value = "";
+    if (this.cm) this.cm.dispatch({ changes: { from: 0, to: this.cm.state.doc.length, insert: "" }, annotations: [External.of(true), Transaction.addToHistory.of(false)] });
     if (this.readerEl) this.readerEl.empty();
   }
 
@@ -65,14 +92,15 @@ export class OrgView extends TextFileView {
    * @returns {Promise<void>}
    */
   async setState(state, result) {
-    if (state && (state.readerMode === "read" || state.readerMode === "source")) this.readerMode = state.readerMode;
+    if (state && (state.readerMode === "read" || state.readerMode === "edit")) this.readerMode = state.readerMode;
+    else if (state && state.readerMode === "source") this.readerMode = "edit";   // name used before 0.2
     await super.setState(state, result);
     this.applyMode();
   }
 
   /**
-   * Switch between reading and source mode.
-   * @param {"read"|"source"} mode
+   * Switch between reading and editing.
+   * @param {"read"|"edit"} mode
    * @returns {void}
    */
   setReaderMode(mode) {
@@ -86,14 +114,14 @@ export class OrgView extends TextFileView {
     if (!this.readerEl) return;
     const reading = this.readerMode === "read";
     this.readerEl.toggleClass("is-hidden", !reading);
-    this.sourceEl.toggleClass("is-hidden", reading);
+    this.cmHost.toggleClass("is-hidden", reading);
     if (this.modeAction) {
-      this.modeAction.setAttribute("aria-label", reading ? "Edit source" : "Read");
+      this.modeAction.setAttribute("aria-label", reading ? "Edit" : "Read");
       this.modeAction.empty();
       this.modeAction.createSpan({ text: reading ? "Edit" : "Read" });
     }
     if (reading) this.render();
-    else this.sourceEl.focus();
+    else if (this.cm) { this.cm.requestMeasure(); this.cm.focus(); }
   }
 
   /** Parse the file and draw it, keeping the scroll position. */
@@ -116,7 +144,7 @@ export class OrgView extends TextFileView {
       });
       if (math) finishRenderMath();
     } catch (err) {
-      // show the problem instead of a blank pane, and keep the source reachable
+      // show the problem instead of a blank pane, and keep the editor reachable
       console.error("Org Reader:", err);
       this.readerEl.empty();
       this.readerEl.createDiv({ cls: "org-error", text: `Org Reader could not render this file: ${err && err.message ? err.message : err}` });
@@ -147,7 +175,10 @@ export class OrgView extends TextFileView {
    * @param {"overview"|"content"|"all"} mode
    * @returns {void}
    */
-  fold(mode) { if (this.readerEl) setFold(this.readerEl, mode); }
+  fold(mode) {
+    if (this.readerMode === "edit" && this.cm) setFoldLevel(this.cm, mode);
+    else if (this.readerEl) setFold(this.readerEl, mode);
+  }
 
   /**
    * Open the target of an internal link: a file in the vault, or a heading in this file.

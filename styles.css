@@ -1,33 +1,83 @@
 /* Org Reader: reading view for .org files. Everything is scoped to .org-reader and uses
    Obsidian's theme variables, so it follows the active theme in light and dark. */
 
-.org-reader-source,
-.org-reader {
+.org-reader,
+.org-reader-editor {
   height: 100%;
   box-sizing: border-box;
 }
 .org-reader.is-hidden,
-.org-reader-source.is-hidden {
+.org-reader-editor.is-hidden {
   display: none;
 }
 
-/* source mode */
-.org-reader-source {
-  width: 100%;
-  padding: var(--size-4-6);
-  border: 0;
-  border-radius: 0;
-  resize: none;
+/* editing mode: the CodeMirror editor */
+:where(.org-reader-editor) .cm-editor {
+  height: 100%;
   background: var(--background-primary);
   color: var(--text-normal);
+}
+:where(.org-reader-editor) .cm-editor.cm-focused { outline: none; }
+:where(.org-reader-editor) .cm-scroller {
   font-family: var(--font-monospace);
   font-size: var(--code-size);
   line-height: 1.6;
 }
-.org-reader-source:focus {
-  outline: none;
-  box-shadow: none;
+:where(.org-reader-editor) .cm-content {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: var(--size-4-6) var(--size-4-5);
+  caret-color: var(--text-normal);
 }
+:where(.org-reader-editor) .cm-cursor { border-left: 2px solid var(--text-normal); }
+:where(.org-reader-editor) .cm-selectionBackground { background: var(--text-selection); }
+:where(.org-reader-editor) .cm-foldPlaceholder {
+  padding: 0 0.4em;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+}
+
+/* editor syntax highlighting */
+:where(.org-reader-editor) .org-hl-heading { font-weight: var(--font-semibold); color: var(--text-accent); }
+:where(.org-reader-editor) .org-hl-h1 { font-size: 1.25em; }
+:where(.org-reader-editor) .org-hl-h2 { font-size: 1.15em; }
+:where(.org-reader-editor) .org-hl-h3 { font-size: 1.08em; }
+:where(.org-reader-editor) .org-hl-stars { color: var(--text-faint); }
+:where(.org-reader-editor) .org-hl-todo { color: var(--color-red); font-weight: var(--font-bold); }
+:where(.org-reader-editor) .org-hl-done { color: var(--color-green); font-weight: var(--font-bold); }
+:where(.org-reader-editor) .org-hl-priority { color: var(--color-orange); }
+:where(.org-reader-editor) .org-hl-tags { color: var(--text-muted); }
+:where(.org-reader-editor) .org-hl-comment,
+:where(.org-reader-editor) .org-hl-keyword { color: var(--text-faint); }
+:where(.org-reader-editor) .org-hl-drawer,
+:where(.org-reader-editor) .org-hl-planning { color: var(--text-muted); }
+:where(.org-reader-editor) .org-hl-planning-kind { color: var(--text-faint); }
+:where(.org-reader-editor) .org-hl-timestamp { color: var(--color-cyan); }
+:where(.org-reader-editor) .org-hl-bold { font-weight: var(--font-bold); }
+:where(.org-reader-editor) .org-hl-italic { font-style: italic; }
+:where(.org-reader-editor) .org-hl-underline { text-decoration: underline; }
+:where(.org-reader-editor) .org-hl-strike { text-decoration: line-through; }
+:where(.org-reader-editor) .org-hl-code,
+:where(.org-reader-editor) .org-hl-verbatim { color: var(--code-normal); background: var(--code-background); }
+:where(.org-reader-editor) .org-hl-marker { color: var(--text-faint); }
+:where(.org-reader-editor) .org-hl-link { color: var(--link-color); }
+:where(.org-reader-editor) .org-hl-math { color: var(--color-purple); }
+:where(.org-reader-editor) .org-hl-footref,
+:where(.org-reader-editor) .org-hl-cookie { color: var(--text-accent); }
+:where(.org-reader-editor) .org-hl-bullet { color: var(--text-accent); font-weight: var(--font-bold); }
+:where(.org-reader-editor) .org-hl-checkbox-on { color: var(--color-green); }
+:where(.org-reader-editor) .org-hl-checkbox-off { color: var(--text-muted); }
+:where(.org-reader-editor) .org-hl-checkbox-partial { color: var(--color-orange); }
+:where(.org-reader-editor) .org-hl-term { font-weight: var(--font-semibold); }
+:where(.org-reader-editor) .org-hl-block { background: var(--code-background); }
+:where(.org-reader-editor) .org-hl-block-edge { color: var(--text-faint); }
+:where(.org-reader-editor) .org-hl-block-src,
+:where(.org-reader-editor) .org-hl-block-example { color: var(--code-normal); }
+:where(.org-reader-editor) .org-hl-fixed { color: var(--code-normal); }
+:where(.org-reader-editor) .org-hl-table-rule,
+:where(.org-reader-editor) .org-hl-rule { color: var(--text-faint); }
 
 /* reading mode: a centred column */
 .org-reader {

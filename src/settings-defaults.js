@@ -1,5 +1,5 @@
 // Plugin settings and their defaults.
-//   defaultMode      how an .org file opens: "read" (rendered) or "source" (plain text)
+//   defaultMode      how an .org file opens: "read" (rendered) or "edit" (editor)
 //   showProperties   show :PROPERTIES: drawers under headings
 //   showComments     show "# " comment lines and #+BEGIN_COMMENT blocks
 //   honorStartup     apply `#+STARTUP: overview` / `content` when a file opens

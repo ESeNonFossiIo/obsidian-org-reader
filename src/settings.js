@@ -15,8 +15,8 @@ export class OrgReaderSettings extends PluginSettingTab {
     containerEl.empty();
     const save = async (key, value) => { this.plugin.settings[key] = value; await this.plugin.saveSettings(); this.plugin.redraw(); };
     new Setting(containerEl).setName("Open files in")
-      .setDesc("Reading shows the rendered file; source is plain text. You can switch per file with the button in the view header.")
-      .addDropdown((d) => d.addOption("read", "Reading").addOption("source", "Source").setValue(this.plugin.settings.defaultMode)
+      .setDesc("Reading shows the rendered file; editing shows the editor. You can switch per file with the button in the view header.")
+      .addDropdown((d) => d.addOption("read", "Reading").addOption("edit", "Editing").setValue(this.plugin.settings.defaultMode)
         .onChange((v) => save("defaultMode", v)));
     new Setting(containerEl).setName("Show property drawers")
       .setDesc("Show the :PROPERTIES: drawer under headings.")

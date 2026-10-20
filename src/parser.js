@@ -3,14 +3,14 @@
 //   parseOrg(text)    -> document tree: preamble blocks plus nested sections
 // Covers the everyday syntax; anything it does not know is kept as plain text.
 
-const MARKERS = { "*": "bold", "/": "italic", "_": "underline", "+": "strike", "=": "verbatim", "~": "code" };
-const PRE = /[\s\-({'"]/;                 // what may precede an opening emphasis marker
+export const MARKERS = { "*": "bold", "/": "italic", "_": "underline", "+": "strike", "=": "verbatim", "~": "code" };
+export const PRE = /[\s\-({'"]/;                 // what may precede an opening emphasis marker
 const POST = /[\s\-.,;:!?')}["\\\]]/;     // what may follow a closing one
-const LINK = /\[\[((?:\\.|[^\]\\])+)\](?:\[((?:\\.|[^\]\\])+)\])?\]/y;
-const TIMESTAMP = /[<[](\d{4}-\d{2}-\d{2})(?: [A-Za-zÀ-ÿ.]+)?(?: \d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)?(?: [.+]{0,2}[+-]\d+[hdwmy](?:\/\d+[hdwmy])?)*[>\]]/y;
-const FOOTREF = /\[fn:([\w-]*)(?::([^\]]*))?\]/y;
-const COOKIE = /\[(\d*\/\d*|\d*%)\]/y;
-const URL_RE = /(?:https?|ftp):\/\/[^\s<>[\]()]+|mailto:[^\s<>[\]()]+/y;
+export const LINK = /\[\[((?:\\.|[^\]\\])+)\](?:\[((?:\\.|[^\]\\])+)\])?\]/y;
+export const TIMESTAMP = /[<[](\d{4}-\d{2}-\d{2})(?: [A-Za-zÀ-ÿ.]+)?(?: \d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?)?(?: [.+]{0,2}[+-]\d+[hdwmy](?:\/\d+[hdwmy])?)*[>\]]/y;
+export const FOOTREF = /\[fn:([\w-]*)(?::([^\]]*))?\]/y;
+export const COOKIE = /\[(\d*\/\d*|\d*%)\]/y;
+export const URL_RE = /(?:https?|ftp):\/\/[^\s<>[\]()]+|mailto:[^\s<>[\]()]+/y;
 
 /**
  * Parse Org inline markup.
@@ -109,7 +109,7 @@ export function parseInline(src) {
  * @param {number} i
  * @returns {?{node: object, end: number}} the math node and the index after it
  */
-function matchMath(src, i) {
+export function matchMath(src, i) {
   const make = (inner, end, display) => {
     const v = inner.trim();
     return v ? { node: { t: "math", v, display, raw: src.slice(i, end) }, end } : null;
@@ -141,7 +141,7 @@ function matchMath(src, i) {
  * @param {number} open
  * @returns {number}
  */
-function closingMarker(src, open) {
+export function closingMarker(src, open) {
   const c = src[open];
   let breaks = 0;
   for (let j = open + 2; j < src.length; j++) {
@@ -166,9 +166,9 @@ export function inlineText(nodes) {
   }).join("");
 }
 
-const HEADING = /^(\*+)(?:[ \t]+(.*))?$/;
+export const HEADING = /^(\*+)(?:[ \t]+(.*))?$/;
 const BEGIN = /^(\s*)#\+BEGIN_(\S+)(?:[ \t]+(.*))?$/i;
-const ITEM = /^(\s*)([-+*]|\d+[.)])(?:[ \t]+(.*))?$/;
+export const ITEM = /^(\s*)([-+*]|\d+[.)])(?:[ \t]+(.*))?$/;
 const PLANNING = /^\s*(?:(?:SCHEDULED|DEADLINE|CLOSED):\s*[<[][^>\]]*[>\]]\s*)+$/;
 const BLANK = /^\s*$/;
 const indentOf = (l) => /^\s*/.exec(l)[0].length;
@@ -231,7 +231,7 @@ export function parseOrg(text) {
  * @param {object} doc filled in place
  * @returns {void}
  */
-function scanKeywords(lines, doc) {
+export function scanKeywords(lines, doc) {
   let inBlock = null;
   const todo = [], done = [];
   for (const line of lines) {
